@@ -14,22 +14,22 @@ parser.add_argument('theater_id',default='748',type=str,help='关卡id,如736代
 parser.add_argument('-m','--max_dolls',type=int,default=30,help='上场人数')
 parser.add_argument('-f','--fairy_ratio',type=float,default=1.25,help='妖精加成,默认5星1.25')
 parser.add_argument('-u','--upgrade_resource',type=int,default=0,help='可以用于强化的资源量（普通装备消耗1份，专属消耗3份）')
-parser.add_argument('-e','--encoding',type=str,default='gbk',help='encoding used in user_info.json')
+parser.add_argument('-l','--language',type=str,default='zh-CN',help='pick a column from resource/table.csv')
 args = parser.parse_args()
 # %% 战区关卡参数
 theater_id = args.theater_id  # 关卡id,如736代表第7期第3区域第6关
 fairy_ratio = args.fairy_ratio  # 妖精加成：5星1.25
 max_dolls = args.max_dolls  # 上场人数
 upgrade_resource = args.upgrade_resource # 可以用于强化的资源量（普通装备消耗1份，专属消耗3份）
-userinfo_encoding = args.encoding # workaround the issue where people feeds the script with json in various encodings
+language = args.language # select column to be used from resource/table.tsv
 
 # %%
 theater_config = get_theater_config(theater_id)
 theater_config['max_dolls'] = max_dolls
 theater_config['fairy_ratio'] = fairy_ratio
 # %%
-name_table = get_name_table()
-doll_info, equip_info, my_dolls, my_equips = load_info(userinfo_encoding)
+name_table = get_name_table(language)
+doll_info, equip_info, my_dolls, my_equips = load_info()
 # %% 计算各人形不同配装的效能
 choices = prepare_choices(doll_info, equip_info, my_dolls, my_equips, theater_config)
 # %%
@@ -56,7 +56,7 @@ for k, recipe in choices.items():
 for k, v in resource.items():
     problem += v >= 0, k
 problem += resource['score']
-problem.solve()
+problem.solve(lp.PULP_CBC_CMD(msg=0))
 print(resource['score'].value())
 strn = []
 res = []
@@ -73,6 +73,7 @@ dollTable = PrettyTable()
 dollTable.field_names = ["Doll Name", "Equipment 1", "Eq 1 LV", "Equipment 2", "Eq 2 LV", "Equipment 3", "Eq 3 LV", "Skill1 LV", "Skill2 LV", "Score"]
 for r in res:
     row_data = r[0].split(sep='\t')
+    row_data = [get_translation(e, name_table) for e in row_data]
     row_data.append(r[1])
     dollTable.add_row(row_data)
 print(dollTable)
