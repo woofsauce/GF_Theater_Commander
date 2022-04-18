@@ -8,11 +8,11 @@ import itertools
 def get_name_table(language: str = "zh-CN"):
     with open(r'resource/table.tsv','r',encoding='utf-8') as f:
         name_table = {}
-        try :
+        try:
             for row in csv.DictReader(f, delimiter='\t'):
                 name_table[row['key']] = row[language]
         except KeyError:
-            print (f'{language} does not exist in resource/table.tsv')
+            print(f'{language} does not exist in resource/table.tsv')
     return name_table
 
 
@@ -123,6 +123,11 @@ def prepare_choices(doll_info, equip_info, my_dolls, my_equips, theater_config):
     for doll in doll_info.values():
         id = doll['id']
         if 1200 < id < 20000 or id > 30000:
+            continue
+        # skip non-modded gun if modded version exist in inventory
+        # modded version is in the 20*** range with same last 3 digits
+        # they have different id, but you can't put both into theater at same time
+        if id + 20000 in my_dolls:
             continue
         if my_dolls[id]['gun_level'] == 0:
             continue
